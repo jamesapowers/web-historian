@@ -1,5 +1,6 @@
 var fs = require('fs');
 var path = require('path');
+var helper = require('../web/http-helpers.js');
 var _ = require('underscore');
 
 /*
@@ -51,28 +52,24 @@ exports.addUrlToList = function(url, callback) {
 };
 
 exports.isUrlArchived = function(url, callback) {
-  // fs.readFile(this.path.archivedSites, 'utf8', function(err, data) {
-  //   if (err) {
-  //     throw err;
-  //   }
-  //   console.log(data);
-  // });
-
-  // var archivedSites = this.paths.archivedSites;
-  // for (var i = 0; i < archivedSites.length; i++) {
-  //   if (callback(archivedSites[i]).url === url) {
-  //     return true;
-  //   }
-  // }
-  // return false;
+  exports.isUrlInList(uri, function(found) {
+    fs.exists(exports.archiveFilePath(helper.urlhost(uri)), function(exists){
+      callback(uri,exists);
+    });
+  });
 };
 
 exports.downloadUrls = function(urls) {
-  // for (var i = 0; i < urls.length; i++) {
-  //   if (this.isUrlArchived(urls[i], function (url) {
-  //     JSON.parse(url);
-  //   })) {
-  //     return urls[i];
-  //   }
-  // }
+  _.each(urls, function(uri){
+    exports.isUrlArchived(uri, function(uri,exists){
+      if (!exists) {
+        uri = 'http://' + uri;
+        request(uri, function (error, response, body) {
+          if (!error && response.statusCode == 200) {
+            fs.writeFile(exports.archiveFilePath(helper.urlhost(uri)),body, callback);
+          }
+        })
+      }
+    })
+  });
 };
